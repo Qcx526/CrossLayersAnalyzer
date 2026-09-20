@@ -1,0 +1,424 @@
+{
+  "n_samples": 13,
+  "n_ok": 13,
+  "n_error": 0,
+  "n_pass": 13,
+  "accuracy": 1.0,
+  "binary": {
+    "tp": 4,
+    "fp": 0,
+    "tn": 7,
+    "fn": 0,
+    "n_positive": 4,
+    "n_negative": 7,
+    "n_excluded_from_binary": 2,
+    "precision": 1.0,
+    "recall": 1.0,
+    "false_positives": [],
+    "false_negatives": [],
+    "note": "仅 binary_label ∈ {exploitable, unexploitable} 的样本参与二分类统计；excluded 样本考查可达性保真等其它性质"
+  },
+  "contract": {
+    "id": "HW-DIV-0001",
+    "name": "除法器除零边界条件偏差",
+    "formalization": {
+      "contract_id": "HW-DIV-0001",
+      "total_predicates": 4,
+      "checkable_predicates": 4,
+      "unformalized_predicates": 0,
+      "unformalized_notes": [],
+      "formalization_ratio": 1.0,
+      "is_minimal_poc": false,
+      "warning": ""
+    }
+  },
+  "evidence_graph": {
+    "ok": true,
+    "db": "F:\\qcx\\code\\CrossLayersAnalyzer\\out\\evidence.db",
+    "nodes": 36,
+    "edges": 30,
+    "inference_edges": 30,
+    "observation_edges": 0,
+    "nodes_by_type": {
+      "Capability": 1,
+      "CodeLocation": 14,
+      "Deviation": 1,
+      "Evidence": 6,
+      "FirmwareImage": 13,
+      "TriggerContract": 1
+    },
+    "triggers_edges": 14,
+    "problems": []
+  },
+  "rows": [
+    {
+      "sample": "S1_positive_controlled",
+      "ok": true,
+      "binary_label": "exploitable",
+      "expected": [
+        "exploitable_candidate"
+      ],
+      "got": [
+        "exploitable_candidate"
+      ],
+      "expected_groups": [
+        "EXPLOITABLE"
+      ],
+      "got_groups": [
+        "EXPLOITABLE"
+      ],
+      "pass": true,
+      "n_candidates": 1,
+      "n_results": 1,
+      "n_blocks": 1,
+      "n_instructions": 6,
+      "n_functions": 1,
+      "n_unreachable": 0,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 1.6187
+    },
+    {
+      "sample": "S2_negative_constant",
+      "ok": true,
+      "binary_label": "unexploitable",
+      "expected": [
+        "present_but_uncontrollable"
+      ],
+      "got": [
+        "present_but_uncontrollable"
+      ],
+      "expected_groups": [
+        "UNEXPLOITABLE"
+      ],
+      "got_groups": [
+        "UNEXPLOITABLE"
+      ],
+      "pass": true,
+      "n_candidates": 0,
+      "n_results": 1,
+      "n_blocks": 1,
+      "n_instructions": 4,
+      "n_functions": 1,
+      "n_unreachable": 0,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.642
+    },
+    {
+      "sample": "S3_negative_unreachable",
+      "ok": true,
+      "binary_label": "unexploitable",
+      "expected": [
+        "not_present",
+        "present_but_unreachable"
+      ],
+      "got": [
+        "present_but_unreachable"
+      ],
+      "expected_groups": [
+        "ABSENT",
+        "UNREACHABLE"
+      ],
+      "got_groups": [
+        "UNREACHABLE"
+      ],
+      "pass": true,
+      "n_candidates": 0,
+      "n_results": 1,
+      "n_blocks": 5,
+      "n_instructions": 5,
+      "n_functions": 1,
+      "n_unreachable": 2,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.6483
+    },
+    {
+      "sample": "S4_negative_absent",
+      "ok": true,
+      "binary_label": "unexploitable",
+      "expected": [
+        "not_present"
+      ],
+      "got": [
+        "not_present"
+      ],
+      "expected_groups": [
+        "ABSENT"
+      ],
+      "got_groups": [
+        "ABSENT"
+      ],
+      "pass": true,
+      "n_candidates": 0,
+      "n_results": 1,
+      "n_blocks": 1,
+      "n_instructions": 5,
+      "n_functions": 1,
+      "n_unreachable": 0,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.547
+    },
+    {
+      "sample": "S5_positive_multi",
+      "ok": true,
+      "binary_label": "exploitable",
+      "expected": [
+        "exploitable_candidate",
+        "present_but_uncontrollable"
+      ],
+      "got": [
+        "exploitable_candidate",
+        "path_dependent"
+      ],
+      "expected_groups": [
+        "EXPLOITABLE",
+        "UNEXPLOITABLE"
+      ],
+      "got_groups": [
+        "EXPLOITABLE",
+        "PARTIAL"
+      ],
+      "pass": true,
+      "n_candidates": 1,
+      "n_results": 2,
+      "n_blocks": 3,
+      "n_instructions": 10,
+      "n_functions": 1,
+      "n_unreachable": 0,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.9932
+    },
+    {
+      "sample": "S6_neg_folded_chain",
+      "ok": true,
+      "binary_label": "unexploitable",
+      "expected": [
+        "present_but_uncontrollable"
+      ],
+      "got": [
+        "present_but_uncontrollable"
+      ],
+      "expected_groups": [
+        "UNEXPLOITABLE"
+      ],
+      "got_groups": [
+        "UNEXPLOITABLE"
+      ],
+      "pass": true,
+      "n_candidates": 0,
+      "n_results": 1,
+      "n_blocks": 1,
+      "n_instructions": 6,
+      "n_functions": 1,
+      "n_unreachable": 0,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.684
+    },
+    {
+      "sample": "S7_pos_partial_control",
+      "ok": true,
+      "binary_label": "exploitable",
+      "expected": [
+        "exploitable_candidate"
+      ],
+      "got": [
+        "exploitable_candidate"
+      ],
+      "expected_groups": [
+        "EXPLOITABLE"
+      ],
+      "got_groups": [
+        "EXPLOITABLE"
+      ],
+      "pass": true,
+      "n_candidates": 1,
+      "n_results": 1,
+      "n_blocks": 1,
+      "n_instructions": 5,
+      "n_functions": 1,
+      "n_unreachable": 0,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.6723
+    },
+    {
+      "sample": "S8_neg_load_derived",
+      "ok": true,
+      "binary_label": "unexploitable",
+      "expected": [
+        "not_controllable",
+        "present_but_uncontrollable"
+      ],
+      "got": [
+        "not_controllable"
+      ],
+      "expected_groups": [
+        "UNEXPLOITABLE"
+      ],
+      "got_groups": [
+        "UNEXPLOITABLE"
+      ],
+      "pass": true,
+      "n_candidates": 0,
+      "n_results": 1,
+      "n_blocks": 1,
+      "n_instructions": 5,
+      "n_functions": 1,
+      "n_unreachable": 0,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.6586
+    },
+    {
+      "sample": "S9_pos_branch_guarded",
+      "ok": true,
+      "binary_label": "exploitable",
+      "expected": [
+        "exploitable_candidate"
+      ],
+      "got": [
+        "exploitable_candidate"
+      ],
+      "expected_groups": [
+        "EXPLOITABLE"
+      ],
+      "got_groups": [
+        "EXPLOITABLE"
+      ],
+      "pass": true,
+      "n_candidates": 1,
+      "n_results": 1,
+      "n_blocks": 3,
+      "n_instructions": 6,
+      "n_functions": 1,
+      "n_unreachable": 0,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.6031
+    },
+    {
+      "sample": "S10_neg_dead_after_ret",
+      "ok": true,
+      "binary_label": "unexploitable",
+      "expected": [
+        "present_but_unreachable"
+      ],
+      "got": [
+        "present_but_unreachable"
+      ],
+      "expected_groups": [
+        "UNREACHABLE"
+      ],
+      "got_groups": [
+        "UNREACHABLE"
+      ],
+      "pass": true,
+      "n_candidates": 0,
+      "n_results": 1,
+      "n_blocks": 2,
+      "n_instructions": 3,
+      "n_functions": 1,
+      "n_unreachable": 1,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.7539
+    },
+    {
+      "sample": "S11_neg_taint_killed",
+      "ok": true,
+      "binary_label": "unexploitable",
+      "expected": [
+        "present_but_uncontrollable"
+      ],
+      "got": [
+        "present_but_uncontrollable"
+      ],
+      "expected_groups": [
+        "UNEXPLOITABLE"
+      ],
+      "got_groups": [
+        "UNEXPLOITABLE"
+      ],
+      "pass": true,
+      "n_candidates": 0,
+      "n_results": 1,
+      "n_blocks": 1,
+      "n_instructions": 5,
+      "n_functions": 1,
+      "n_unreachable": 0,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.5926
+    },
+    {
+      "sample": "S12_pos_indirect_jump_table",
+      "ok": true,
+      "binary_label": "excluded",
+      "expected": [
+        "exploitable_candidate",
+        "path_dependent",
+        "present_but_uncontrollable"
+      ],
+      "got": [
+        "present_but_uncontrollable"
+      ],
+      "expected_groups": [
+        "EXPLOITABLE",
+        "PARTIAL",
+        "UNEXPLOITABLE"
+      ],
+      "got_groups": [
+        "UNEXPLOITABLE"
+      ],
+      "pass": true,
+      "n_candidates": 0,
+      "n_results": 1,
+      "n_blocks": 5,
+      "n_instructions": 8,
+      "n_functions": 1,
+      "n_unreachable": 2,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.6367
+    },
+    {
+      "sample": "S13_pos_indirect_pointer",
+      "ok": true,
+      "binary_label": "excluded",
+      "expected": [
+        "exploitable_candidate",
+        "not_controllable",
+        "path_dependent",
+        "present_but_uncontrollable",
+        "unknown"
+      ],
+      "got": [
+        "unknown"
+      ],
+      "expected_groups": [
+        "EXPLOITABLE",
+        "PARTIAL",
+        "UNEXPLOITABLE",
+        "UNKNOWN"
+      ],
+      "got_groups": [
+        "UNKNOWN"
+      ],
+      "pass": true,
+      "n_candidates": 0,
+      "n_results": 1,
+      "n_blocks": 3,
+      "n_instructions": 5,
+      "n_functions": 1,
+      "n_unreachable": 0,
+      "n_corrective": 0,
+      "unknown_ratio": 0.0,
+      "elapsed_sec": 0.6346
+    }
+  ]
+}

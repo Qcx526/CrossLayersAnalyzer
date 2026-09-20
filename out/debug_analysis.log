@@ -1,0 +1,176 @@
+============================================================================
+样本 S1_positive_controlled   期望=['exploitable_candidate']
+============================================================================
+stats = {'blocks': 1, 'edges': 0, 'functions': 1, 'unreachable_blocks': 0, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 6, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=[] writes=['a1', 'a2', 'a3', 'a4']
+    0x80000000 lw       op=load           ops=['a1'] src=['MEM'] taint=['input:a0'] const={}
+    0x80000004 andi     op=logic_and      ops=['a2'] src=['a1', '#255'] taint=['input:a0', 'input:mem'] const={}
+    0x80000008 mv       op=mov            ops=['a3'] src=['zero'] taint=[] const={}
+    0x8000000c divu     op=arith_div      ops=['a4'] src=['a2', 'a3'] taint=['input:a0', 'input:mem'] const={'a3': 0}
+    0x80000010 sw       op=store          ops=[] src=['a4', 'MEM'] taint=['input:a0', 'input:mem'] const={'a3': 0}
+    0x80000014 ret      op=return         ops=[] src=[] taint=[] const={'a3': 0}
+
+
+============================================================================
+样本 S2_negative_constant   期望=['present_but_uncontrollable']
+============================================================================
+stats = {'blocks': 1, 'edges': 0, 'functions': 1, 'unreachable_blocks': 0, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 4, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=[] writes=['a2', 'a3', 'a4']
+    0x80000000 addi     op=arith_add      ops=['a2'] src=['zero', '#100'] taint=[] const={}
+    0x80000004 addi     op=arith_add      ops=['a3'] src=['zero', '#5'] taint=[] const={'a2': 100}
+    0x80000008 divu     op=arith_div      ops=['a4'] src=['a2', 'a3'] taint=[] const={'a2': 100, 'a3': 5}
+    0x8000000c ret      op=return         ops=[] src=[] taint=[] const={'a2': 100, 'a3': 5, 'a4': 20}
+
+
+============================================================================
+样本 S3_negative_unreachable   期望=['present_but_unreachable', 'not_present']
+============================================================================
+stats = {'blocks': 5, 'edges': 4, 'functions': 1, 'unreachable_blocks': 2, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 5, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=['bb_80000008'] writes=[]
+    0x80000000 j        op=jump           ops=[] src=['#8'] taint=[] const={}
+
+--- block bb_80000004 addr=0x80000004 reachable=False correct=False succ=['bb_80000008'] writes=['a2']
+    0x80000004 addi     op=arith_add      ops=['a2'] src=['zero', '#1'] taint=[] const={}
+
+--- block bb_80000008 addr=0x80000008 reachable=True correct=False succ=['bb_80000010'] writes=[]
+    0x80000008 j        op=jump           ops=[] src=['#8'] taint=[] const={}
+
+--- block bb_8000000c addr=0x8000000c reachable=False correct=False succ=['bb_80000010'] writes=['a4']
+    0x8000000c divu     op=arith_div      ops=['a4'] src=['a2', 'a3'] taint=[] const={}
+
+--- block bb_80000010 addr=0x80000010 reachable=True correct=False succ=[] writes=[]
+    0x80000010 ret      op=return         ops=[] src=[] taint=[] const={}
+
+
+============================================================================
+样本 S4_negative_absent   期望=['not_present']
+============================================================================
+stats = {'blocks': 1, 'edges': 0, 'functions': 1, 'unreachable_blocks': 0, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 5, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=[] writes=['a1', 'a2', 'a3']
+    0x80000000 lw       op=load           ops=['a1'] src=['MEM'] taint=['input:a0'] const={}
+    0x80000004 addi     op=arith_add      ops=['a2'] src=['a1', '#1'] taint=['input:a0', 'input:mem'] const={}
+    0x80000008 sw       op=store          ops=[] src=['a2', 'MEM'] taint=['input:a0', 'input:mem'] const={}
+    0x8000000c add      op=arith_add      ops=['a3'] src=['a1', 'a2'] taint=['input:a0', 'input:mem'] const={}
+    0x80000010 ret      op=return         ops=[] src=[] taint=[] const={}
+
+
+============================================================================
+样本 S5_positive_multi   期望=['exploitable_candidate', 'present_but_uncontrollable']
+============================================================================
+stats = {'blocks': 3, 'edges': 3, 'functions': 1, 'unreachable_blocks': 0, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 10, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=['bb_8000001c', 'bb_80000014'] writes=['a1', 'a2', 'a3', 'a4']
+    0x80000000 lw       op=load           ops=['a1'] src=['MEM'] taint=['input:a0'] const={}
+    0x80000004 andi     op=logic_and      ops=['a2'] src=['a1', '#255'] taint=['input:a0', 'input:mem'] const={}
+    0x80000008 mv       op=mov            ops=['a3'] src=['zero'] taint=[] const={}
+    0x8000000c divu     op=arith_div      ops=['a4'] src=['a2', 'a3'] taint=['input:a0', 'input:mem'] const={'a3': 0}
+    0x80000010 beqz     op=branch         ops=[] src=['a4', '#12'] taint=['input:a0', 'input:mem'] const={'a3': 0}
+
+--- block bb_80000014 addr=0x80000014 reachable=True correct=False succ=['bb_8000001c'] writes=['a5']
+    0x80000014 sw       op=store          ops=[] src=['a4', 'MEM'] taint=['input:a0', 'input:mem'] const={}
+    0x80000018 addi     op=arith_add      ops=['a5'] src=['zero', '#64'] taint=[] const={}
+
+--- block bb_8000001c addr=0x8000001c reachable=True correct=False succ=[] writes=['a6', 'a7']
+    0x8000001c addi     op=arith_add      ops=['a6'] src=['zero', '#8'] taint=[] const={}
+    0x80000020 divu     op=arith_div      ops=['a7'] src=['a5', 'a6'] taint=[] const={'a6': 8}
+    0x80000024 ret      op=return         ops=[] src=[] taint=[] const={'a6': 8}
+
+
+============================================================================
+样本 S6_neg_folded_chain   期望=['present_but_uncontrollable']
+============================================================================
+stats = {'blocks': 1, 'edges': 0, 'functions': 1, 'unreachable_blocks': 0, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 6, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=[] writes=['a1', 'a2', 'a3', 'a4', 'a5']
+    0x80000000 addi     op=arith_add      ops=['a1'] src=['zero', '#20'] taint=[] const={}
+    0x80000004 addi     op=arith_add      ops=['a2'] src=['a1', '#30'] taint=[] const={'a1': 20}
+    0x80000008 slli     op=arith_shift    ops=['a3'] src=['a2', '#2'] taint=[] const={'a1': 20, 'a2': 50}
+    0x8000000c andi     op=logic_and      ops=['a4'] src=['a3', '#255'] taint=[] const={'a1': 20, 'a2': 50, 'a3': 200}
+    0x80000010 divu     op=arith_div      ops=['a5'] src=['a4', 'a3'] taint=[] const={'a1': 20, 'a2': 50, 'a3': 200, 'a4': 200}
+    0x80000014 ret      op=return         ops=[] src=[] taint=[] const={'a1': 20, 'a2': 50, 'a3': 200, 'a4': 200, 'a5': 1}
+
+
+============================================================================
+样本 S7_pos_partial_control   期望=['exploitable_candidate']
+============================================================================
+stats = {'blocks': 1, 'edges': 0, 'functions': 1, 'unreachable_blocks': 0, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 5, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=[] writes=['a1', 'a3', 'a4', 'a5']
+    0x80000000 lw       op=load           ops=['a1'] src=['MEM'] taint=['input:a0'] const={}
+    0x80000004 andi     op=logic_and      ops=['a4'] src=['a1', '#255'] taint=['input:a0', 'input:mem'] const={}
+    0x80000008 mv       op=mov            ops=['a3'] src=['zero'] taint=[] const={}
+    0x8000000c divu     op=arith_div      ops=['a5'] src=['a4', 'a3'] taint=['input:a0', 'input:mem'] const={'a3': 0}
+    0x80000010 ret      op=return         ops=[] src=[] taint=[] const={'a3': 0}
+
+
+============================================================================
+样本 S8_neg_load_derived   期望=['present_but_uncontrollable']
+============================================================================
+stats = {'blocks': 1, 'edges': 0, 'functions': 1, 'unreachable_blocks': 0, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 5, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=[] writes=['a1', 'a2', 'a3', 'a4']
+    0x80000000 lui      op=mov            ops=['a1'] src=['#524288'] taint=[] const={}
+    0x80000004 lw       op=load           ops=['a2'] src=['MEM'] taint=[] const={'a1': 2147483648}
+    0x80000008 addi     op=arith_add      ops=['a3'] src=['zero', '#4'] taint=[] const={'a1': 2147483648}
+    0x8000000c divu     op=arith_div      ops=['a4'] src=['a2', 'a3'] taint=[] const={'a1': 2147483648, 'a3': 4}
+    0x80000010 ret      op=return         ops=[] src=[] taint=[] const={'a1': 2147483648, 'a3': 4}
+
+
+============================================================================
+样本 S9_pos_branch_guarded   期望=['exploitable_candidate']
+============================================================================
+stats = {'blocks': 3, 'edges': 2, 'functions': 1, 'unreachable_blocks': 0, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 6, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=['bb_80000010', 'bb_8000000c'] writes=['a1', 'a2']
+    0x80000000 lw       op=load           ops=['a1'] src=['MEM'] taint=['input:a0'] const={}
+    0x80000004 addi     op=arith_add      ops=['a2'] src=['zero', '#8'] taint=[] const={}
+    0x80000008 bne      op=branch         ops=[] src=['a1', 'a2', '#8'] taint=['input:a0', 'input:mem'] const={'a2': 8}
+
+--- block bb_8000000c addr=0x8000000c reachable=True correct=False succ=[] writes=[]
+    0x8000000c ret      op=return         ops=[] src=[] taint=[] const={}
+
+--- block bb_80000010 addr=0x80000010 reachable=True correct=False succ=[] writes=['a4']
+    0x80000010 divu     op=arith_div      ops=['a4'] src=['a1', 'a1'] taint=['input:a0', 'input:mem'] const={}
+    0x80000014 ret      op=return         ops=[] src=[] taint=[] const={}
+
+
+============================================================================
+样本 S10_neg_dead_after_ret   期望=['present_but_unreachable']
+============================================================================
+stats = {'blocks': 2, 'edges': 0, 'functions': 1, 'unreachable_blocks': 1, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 3, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=[] writes=[]
+    0x80000000 ret      op=return         ops=[] src=[] taint=[] const={}
+
+--- block bb_80000004 addr=0x80000004 reachable=False correct=False succ=[] writes=['a4', 'a5']
+    0x80000004 divu     op=arith_div      ops=['a4'] src=['a1', 'a2'] taint=[] const={}
+    0x80000008 divu     op=arith_div      ops=['a5'] src=['a1', 'a2'] taint=[] const={}
+
+
+============================================================================
+样本 S11_neg_taint_killed   期望=['present_but_uncontrollable']
+============================================================================
+stats = {'blocks': 1, 'edges': 0, 'functions': 1, 'unreachable_blocks': 0, 'corrective_blocks': 0, 'entry_points': 1, 'lift_total': 5, 'lift_unknown': 0, 'lift_unknown_ratio': 0.0, 'has_symbols': False, 'functions_source': 'heuristic'}
+entry points = {'a': '0'}
+
+--- block bb_80000000 addr=0x80000000 reachable=True correct=False succ=[] writes=['a1', 'a2', 'a4']
+    0x80000000 lw       op=load           ops=['a1'] src=['MEM'] taint=['input:a0'] const={}
+    0x80000004 addi     op=arith_add      ops=['a1'] src=['zero', '#64'] taint=[] const={}
+    0x80000008 addi     op=arith_add      ops=['a2'] src=['zero', '#8'] taint=[] const={'a1': 64}
+    0x8000000c divu     op=arith_div      ops=['a4'] src=['a1', 'a2'] taint=[] const={'a1': 64, 'a2': 8}
+    0x80000010 ret      op=return         ops=[] src=[] taint=[] const={'a1': 64, 'a2': 8, 'a4': 8}
+

@@ -1,0 +1,75 @@
+契约要求操作类别: ['arith_div', 'store']
+
+==========================================================================
+S1_positive_controlled  期望=['exploitable_candidate']
+==========================================================================
+  block bb_80000000 可达=True
+    required=['arith_div', 'store']
+    candidate_insns=[('0x8000000c', 'divu', 'arith_div'), ('0x80000010', 'sw', 'store')]
+      0x8000000c divu: src=[('reg', 'a2'), ('reg', 'a3')] ops=[('reg', 'a4')] const_state={'a3': 0}
+      0x80000010 sw: src=[('reg', 'a4'), ('mem', None)] ops=[] const_state={'a3': 0}
+    >>> control=controlled key=divu arith_div taints=['input:a0', 'input:mem']
+
+
+==========================================================================
+S2_negative_constant  期望=['present_but_uncontrollable']
+==========================================================================
+  block bb_80000000 可达=True
+    required=['arith_div', 'store']
+    candidate_insns=[('0x80000008', 'divu', 'arith_div')]
+      0x80000008 divu: src=[('reg', 'a2'), ('reg', 'a3')] ops=[('reg', 'a4')] const_state={'a2': 100, 'a3': 5}
+    >>> control=unknown key=divu arith_div taints=[]
+
+
+==========================================================================
+S3_negative_unreachable  期望=['present_but_unreachable', 'not_present']
+==========================================================================
+  block bb_80000000 可达=True
+    required=['arith_div', 'store']
+    candidate_insns=[]
+    >>> control=not_present key=None taints=[]
+
+  [skip 不可达] bb_80000004
+  block bb_80000008 可达=True
+    required=['arith_div', 'store']
+    candidate_insns=[]
+    >>> control=not_present key=None taints=[]
+
+  [skip 不可达] bb_8000000c
+  block bb_80000010 可达=True
+    required=['arith_div', 'store']
+    candidate_insns=[]
+    >>> control=not_present key=None taints=[]
+
+
+==========================================================================
+S4_negative_absent  期望=['not_present']
+==========================================================================
+  block bb_80000000 可达=True
+    required=['arith_div', 'store']
+    candidate_insns=[('0x80000008', 'sw', 'store')]
+      0x80000008 sw: src=[('reg', 'a2'), ('mem', None)] ops=[] const_state={}
+    >>> control=controlled key=sw store taints=['input:a0', 'input:mem']
+
+
+==========================================================================
+S5_positive_multi  期望=['exploitable_candidate', 'present_but_uncontrollable']
+==========================================================================
+  block bb_80000000 可达=True
+    required=['arith_div', 'store']
+    candidate_insns=[('0x8000000c', 'divu', 'arith_div')]
+      0x8000000c divu: src=[('reg', 'a2'), ('reg', 'a3')] ops=[('reg', 'a4')] const_state={'a3': 0}
+    >>> control=controlled key=divu arith_div taints=['input:a0', 'input:mem']
+
+  block bb_80000014 可达=True
+    required=['arith_div', 'store']
+    candidate_insns=[('0x80000014', 'sw', 'store')]
+      0x80000014 sw: src=[('reg', 'a4'), ('mem', None)] ops=[] const_state={'a3': 0}
+    >>> control=controlled key=sw store taints=['input:a0', 'input:mem']
+
+  block bb_8000001c 可达=True
+    required=['arith_div', 'store']
+    candidate_insns=[('0x80000020', 'divu', 'arith_div')]
+      0x80000020 divu: src=[('reg', 'a5'), ('reg', 'a6')] ops=[('reg', 'a7')] const_state={'a3': 0, 'a6': 8}
+    >>> control=unknown key=divu arith_div taints=[]
+

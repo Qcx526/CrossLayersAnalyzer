@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crosslayer"
+version = "0.1.0"
+description = "跨层漏洞攻击链路分析器：在原始固件二进制上判定硬件漏洞触发条件是否已被固件自身满足"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "<待填>", email = "<待填>" }]
+keywords = [
+    "hardware-security",
+    "cross-layer",
+    "firmware-analysis",
+    "vulnerability",
+    "SMT",
+    "trigger-condition",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+    "Intended Audience :: Science/Research",
+]
+
+dependencies = [
+    "z3-solver>=4.13",
+    "capstone>=5.0",
+    "pyelftools>=0.31",
+    "networkx>=3.2",
+    "jsonschema>=4.20",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.urls]
+# Repository = "https://github.com/<org>/crosslayer"
+Documentation = "docs/02-跨层漏洞攻击链路-工程框架.md"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+crosslayer = ["py.typed"]

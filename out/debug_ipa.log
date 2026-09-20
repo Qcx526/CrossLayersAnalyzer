@@ -1,0 +1,24 @@
+block bb_80000000 addr=0x80000000 reach=True
+   preds=[]
+   succs=['bb_8000001c', 'bb_80000014']
+   0x80000000 lw       src=[('mem', None)] fold=None before={}
+   0x80000004 andi     src=[('reg', 'a1'), ('const', 255)] fold=None before={}
+   0x80000008 mv       src=[('reg', 'zero')] fold=0 before={}
+   0x8000000c divu     src=[('reg', 'a2'), ('reg', 'a3')] fold=None before={'a3': 0}
+   0x80000010 beqz     src=[('reg', 'a4'), ('const', 12)] fold=None before={'a3': 0}
+   exit_state={'a3': 0}
+
+block bb_80000014 addr=0x80000014 reach=True
+   preds=['bb_80000000']
+   succs=['bb_8000001c']
+   0x80000014 sw       src=[('reg', 'a4'), ('mem', None)] fold=None before={}
+   0x80000018 addi     src=[('reg', 'zero'), ('const', 64)] fold=64 before={}
+   exit_state={'a5': 64}
+
+block bb_8000001c addr=0x8000001c reach=True
+   preds=['bb_80000000', 'bb_80000014']
+   succs=[]
+   0x8000001c addi     src=[('reg', 'zero'), ('const', 8)] fold=8 before={}
+   0x80000020 divu     src=[('reg', 'a5'), ('reg', 'a6')] fold=None before={'a6': 8}
+   0x80000024 ret      src=[] fold=None before={'a6': 8}
+   exit_state={'a6': 8}

@@ -1,0 +1,411 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://crosslayer.local/schemas/cleg-node.schema.json",
+  "title": "CLEG Node - 跨层证据图节点",
+  "description": "芯片跨层漏洞攻击链路分析 - 证据图节点定义。所有节点共享 node_id / node_type / platform / evidence_level 等公共字段。",
+  "definitions": {
+
+    "evidence_level": {
+      "type": "string",
+      "enum": ["E0", "E1", "E2", "E3", "E4"],
+      "description": "E0=报告/规则语义关联(候选) E1=静态分析或有界约束满足(模型内可行路径) E2=原镜像在抽象/重托管模型可重放(模型验证) E3=原镜像在匹配的有漏洞RTL上出现异常和影响(实现级验证) E4=原始目标板卡与固件从合法初态和允许输入重放(板上验证)"
+    },
+
+    "provenance": {
+      "type": "object",
+      "description": "所有推断字段必须可溯源。LLM 生成或人工推断的字段必须标注。",
+      "properties": {
+        "source_kind": {
+          "type": "string",
+          "enum": ["upstream_report", "manual_annotation", "llm_extraction", "static_analysis", "smt_solver", "dynamic_observation"]
+        },
+        "source_ref": {
+          "type": "string",
+          "description": "来源引用：文件路径 + 页码/行号，或工具输出标识，或实验 run-id"
+        },
+        "source_quote": {
+          "type": "string",
+          "description": "原句摘录（LLM 抽取时必填）"
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "human_reviewed": { "type": "boolean", "default": false },
+        "unknown_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "显式记录哪些字段无法确定。禁止用默认值填充未知项。"
+        }
+      },
+      "required": ["source_kind"]
+    },
+
+    "platform_identity": {
+      "type": "object",
+      "description": "平台身份。跨层分析中同名寄存器必须以平台+版本区分。",
+      "properties": {
+        "soc_model": { "type": "string" },
+        "core_model": { "type": "string" },
+        "isa": { "type": "string", "description": "如 riscv-rv32imac / armv7em / sparc-v8" },
+        "isa_extensions": { "type": "array", "items": { "type": "string" } },
+        "rtl_commit": { "type": "string" },
+        "chip_revision": { "type": "string" },
+        "config": { "type": "object", "description": "关键配置项（cache/MMU/PMP/MPU 等）" },
+        "microcode_or_errata_version": { "type": "string" },
+        "endianness": { "type": "string", "enum": ["little", "big", "bi"] }
+      },
+      "required": ["isa"]
+    },
+
+    "smt_constraint": {
+      "type": "object",
+      "description": "SMT 约束的可序列化表示。用于边的条件、触发契约的 Trigger 段。",
+      "properties": {
+        "logic": { "type": "string", "default": "QF_BV", "description": "SMT-LIB logic" },
+        "expr_smtlib": { "type": "string", "description": "SMT-LIB 表达式文本" },
+        "var_declarations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "sort": { "type": "string", "description": "BitVec 32 / Int / Bool / Array" },
+              "bind_to": { "type": "string", "description": "绑定到的硬件信号 / 寄存器 / 固件变量" }
+            },
+            "required": ["name", "sort"]
+          }
+        },
+        "satisfiability": {
+          "type": "string",
+          "enum": ["sat", "unsat", "unknown", "not_checked"],
+          "description": "unsat 只排除当前建模范围和界限内的可能；超时或不支持必须返回 unknown。"
+        }
+      },
+      "required": ["expr_smtlib"]
+    },
+
+    "capability_summary": {
+      "type": "object",
+      "description": "固件漏洞的能力摘要。crash != 任意执行；任意写 != 任意特权写。",
+      "properties": {
+        "entry": { "type": "string", "description": "入口：接口/函数/PC" },
+        "condition": { "type": "string", "description": "触发条件" },
+        "primitive": {
+          "type": "string",
+          "enum": [
+            "read_oob", "write_oob", "write_bounded", "partial_address_control",
+            "partial_value_control", "length_control", "interface_reachable",
+            "callback_influence", "denial_of_service", "control_flow_hijack"
+          ]
+        },
+        "constraints": { "$ref": "#/definitions/smt_constraint" },
+        "evidence_ref": { "type": "string", "description": "指向 Evidence 节点的 node_id" }
+      },
+      "required": ["entry", "primitive"]
+    },
+
+    "trigger_contract": {
+      "type": "object",
+      "description": "硬件触发契约 H = (Platform, Pre, Trigger, Deviation, Observe, Scope)。这是跨层分析的核心靶标。",
+      "properties": {
+        "platform": { "$ref": "#/definitions/platform_identity" },
+        "pre": {
+          "type": "object",
+          "description": "前置条件：权限、寄存器、内存属性、保护状态、缓存/预测器前置状态",
+          "properties": {
+            "privilege": { "type": "string" },
+            "required_register_states": { "type": "array", "items": { "type": "string" } },
+            "memory_attributes": { "type": "array", "items": { "type": "string" } },
+            "protection_state": { "type": "array", "items": { "type": "string" } },
+            "microarch_state": { "type": "array", "items": { "type": "string" } },
+            "smt": { "$ref": "#/definitions/smt_constraint" }
+          }
+        },
+        "trigger": {
+          "type": "object",
+          "description": "触发条件：事件/指令/事务的语义、参数关系、顺序、时间窗口、并发条件",
+          "properties": {
+            "event_kind": { "type": "string", "enum": ["instruction", "transaction", "interrupt", "mmio_access", "dma_descriptor", "sequence"] },
+            "semantic_description": { "type": "string" },
+            "operand_relations": { "type": "array", "items": { "type": "string" } },
+            "ordering": { "type": "array", "items": { "type": "string" } },
+            "timing_window": { "type": "string" },
+            "concurrency": { "type": "string" },
+            "smt": { "$ref": "#/definitions/smt_constraint" }
+          }
+        },
+        "deviation": {
+          "type": "object",
+          "description": "实现相对规范的错误，或违反安全契约的行为。思路③的输入。",
+          "properties": {
+            "deviation_kind": {
+              "type": "string",
+              "enum": ["wrong_load_value", "missing_exception", "wrong_register_result",
+                       "dma_oob", "stale_state", "permission_bypass", "timing_leak", "resource_contention_leak"]
+            },
+            "specification_ref": { "type": "string", "description": "违反的规范条款" },
+            "safety_property_ref": { "type": "string", "description": "违反的安全契约条款" },
+            "expected_value": { "type": "string" },
+            "actual_value": { "type": "string" },
+            "first_divergence_point": { "type": "string", "description": "首个偏差点（信号/周期/PC）" }
+          },
+          "required": ["deviation_kind"]
+        },
+        "observe": {
+          "type": "object",
+          "description": "判定该偏差发生的可观测证据及其所需后端",
+          "properties": {
+            "observable_signals": { "type": "array", "items": { "type": "string" } },
+            "required_backend": {
+              "type": "string",
+              "enum": ["rtl_waveform", "rtl_assertion", "board_trace", "board_hw_breakpoint",
+                       "board_logic_analyzer", "emulator", "statistical_measurement", "debugger_intervention"]
+            },
+            "judgement_kind": {
+              "type": "string",
+              "enum": ["functional_assertion", "architectural_differential", "protocol_expectation",
+                       "access_control_check", "statistical_relational"],
+              "description": "泄漏类性质必须用 statistical_relational，不能用 crash 判据替代"
+            }
+          }
+        },
+        "scope": {
+          "type": "object",
+          "description": "成立范围：已验证平台、未建模内容、观测盲区及置信依据",
+          "properties": {
+            "verified_platforms": { "type": "array", "items": { "type": "string" } },
+            "unmodeled_aspects": { "type": "array", "items": { "type": "string" } },
+            "observation_blind_spots": { "type": "array", "items": { "type": "string" } },
+            "assumptions": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "is_minimal_poc": {
+          "type": "boolean",
+          "description": "最小化 PoC 通常只给出充分触发实例，不能自动提升为必要且充分的漏洞定义。"
+        }
+      },
+      "required": ["platform", "pre", "trigger", "deviation", "observe", "scope"]
+    },
+
+    "security_property": {
+      "type": "object",
+      "description": "安全资产与性质。",
+      "properties": {
+        "property_class": {
+          "type": "string",
+          "enum": ["confidentiality", "integrity", "isolation", "availability"]
+        },
+        "asset": { "type": "string", "description": "受保护的安全资产" },
+        "statement": { "type": "string", "description": "自然语言表述" },
+        "formal_expression": { "$ref": "#/definitions/smt_constraint" },
+        "judgement_kind": {
+          "type": "string",
+          "enum": ["functional_assertion", "architectural_differential", "protocol_expectation",
+                   "access_control_check", "statistical_relational"]
+        }
+      },
+      "required": ["property_class", "asset", "statement"]
+    }
+  },
+
+  "type": "object",
+  "required": ["node_id", "node_type", "platform", "evidence_level", "provenance"],
+  "properties": {
+    "node_id": { "type": "string", "description": "全局唯一 ID" },
+    "node_type": {
+      "type": "string",
+      "enum": [
+        "FirmwareImage", "CodeLocation", "InstructionFragment", "InputEntry",
+        "Capability", "HardwareComponent", "Register", "RegField", "AddressSpace",
+        "TriggerContract", "Deviation", "SecurityProperty", "Experiment", "Evidence",
+        "CorrectivePath"
+      ]
+    },
+    "label": { "type": "string", "description": "人类可读标签" },
+    "platform": { "$ref": "#/definitions/platform_identity" },
+    "evidence_level": { "$ref": "#/definitions/evidence_level" },
+    "provenance": { "$ref": "#/definitions/provenance" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "A/B/C 路线可多标签。同一条链可能先 A 再 C；B 也可能是 A 获得控制能力后复用的路径。"
+    },
+    "route_membership": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["A_fw_triggers_hw", "B_fw_has_trigger_fragment", "C_hw_corrupts_fw"] },
+      "description": "该节点/链所属的思路。允许同时属于多条。"
+    },
+
+    "FirmwareImage": {
+      "type": "object",
+      "properties": {
+        "sha256": { "type": "string" },
+        "format": { "type": "string", "enum": ["elf", "bin", "hex", "srec"] },
+        "base_address": { "type": "string" },
+        "entry_point": { "type": "string" },
+        "segments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "vaddr": { "type": "string" },
+              "size": { "type": "integer" },
+              "flags": { "type": "string" }
+            }
+          }
+        },
+        "boot_chain_dependency": { "type": "string", "description": "Boot ROM / 引导阶段依赖" },
+        "symbol_table_available": { "type": "boolean" },
+        "debug_info_available": { "type": "boolean" },
+        "identity_preserved_notes": {
+          "type": "string",
+          "description": "记录本次分析是否严格保持镜像身份：可执行段/Flash 一致性、装载布局、入口"
+        }
+      }
+    },
+
+    "CodeLocation": {
+      "type": "object",
+      "properties": {
+        "firmware_ref": { "type": "string", "description": "所属 FirmwareImage node_id" },
+        "address": { "type": "string" },
+        "size": { "type": "integer" },
+        "function_name": { "type": "string" },
+        "ir_representation": { "type": "string", "enum": ["pcode", "vex", "none"] },
+        "ir_ref": { "type": "string", "description": "IR 层标识，用于跨 ISA 匹配" },
+        "is_corrective_path": { "type": "boolean", "description": "标记看门狗/CRC/重试/双读比较等纠正机制。ARMORY 证明防护可能加剧对其他故障模型的脆弱性，不能因存在防护而排除路径。" },
+        "reachable_from": { "type": "array", "items": { "type": "string" }, "description": "可达它的 InputEntry node_id 列表" }
+      },
+      "required": ["firmware_ref", "address"]
+    },
+
+    "InputEntry": {
+      "type": "object",
+      "properties": {
+        "interface_kind": { "type": "string", "enum": ["uart", "usb", "spi", "i2c", "can", "ethernet", "ble", "jtag", "other"] },
+        "protocol": { "type": "string" },
+        "attacker_privilege": { "type": "string", "description": "真实威胁模型中攻击者通过该接口拥有的权限。JTAG/GDB 属分析者观测能力，不得默认赋予攻击者。" },
+        "is_analyst_only": { "type": "boolean", "description": "true 表示该接口仅分析者可达，不能作为攻击路径" },
+        "requires_handshake": { "type": "boolean" },
+        "session_model": { "type": "string", "description": "多步会话/事件序列模型，不能默认所有漏洞都由一段独立字节数组触发" }
+      },
+      "required": ["interface_kind", "attacker_privilege"]
+    },
+
+    "Capability": {
+      "type": "object",
+      "properties": {
+        "capability_summary": { "$ref": "#/definitions/capability_summary" },
+        "source_vulnerability": { "type": "string", "description": "上游固件漏洞标识" }
+      }
+    },
+
+    "HardwareComponent": {
+      "type": "object",
+      "properties": {
+        "module_name": { "type": "string" },
+        "hierarchy_path": { "type": "string" },
+        "rtl_source_available": { "type": "boolean" },
+        "bug_class": {
+          "type": "string",
+          "description": "CPU 核漏洞 / 总线外设缺陷 / 配置错误 / 物理扰动 / 微架构泄漏 应分开标注。ProcessorFuzz 主要覆盖处理器验证，不能假定上游已覆盖 DMA、外设或模拟电路漏洞。",
+          "enum": ["cpu_core", "bus_peripheral", "misconfiguration", "physical_perturbation", "microarchitectural_leakage", "unknown"]
+        }
+      },
+      "required": ["module_name", "bug_class"]
+    },
+
+    "Register": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "access_side_effects": { "type": "string", "description": "CSR/MMIO 读可能有副作用，轮询可能改变总线时序。必须记录。" },
+        "fields": { "type": "array", "items": { "type": "string" } },
+        "svd_or_manual_ref": { "type": "string" }
+      }
+    },
+
+    "TriggerContract": { "$ref": "#/definitions/trigger_contract" },
+    "SecurityProperty": { "$ref": "#/definitions/security_property" },
+
+    "Deviation": {
+      "type": "object",
+      "properties": {
+        "contract_ref": { "type": "string", "description": "所属 TriggerContract node_id" },
+        "deviation_kind": { "type": "string" },
+        "constrained_by_hw": { "type": "boolean", "description": "是否由硬件契约约束。false 表示这是任意注入的偏差，不足以证明真实硬件漏洞。" }
+      }
+    },
+
+    "Experiment": {
+      "type": "object",
+      "properties": {
+        "run_id": { "type": "string" },
+        "firmware_hash": { "type": "string" },
+        "target_identity": { "type": "string" },
+        "input_ref": { "type": "string", "description": "输入身份（报文/文件/操作序列）" },
+        "observed_events": { "type": "array", "items": { "type": "string" } },
+        "unobservable_items": { "type": "array", "items": { "type": "string" } },
+        "debugger_intervention": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "任何由调试器完成的状态干预必须单独留痕。调试器写 RAM/寄存器或强制设置 PC 属条件实验/诊断，不能单独证明真实攻击可达。"
+        },
+        "reset_strategy": { "type": "string" },
+        "trace_ref": { "type": "string" },
+        "property_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "property_ref": { "type": "string" },
+              "result": { "type": "string", "enum": ["violated", "held", "unknown"] }
+            }
+          }
+        },
+        "returned_unknown": {
+          "type": "boolean",
+          "description": "无可观测数据时必须返回 unknown，而不是将空集合解释成『没有触发』"
+        },
+        "counterfactual_kind": {
+          "type": "string",
+          "enum": ["none", "hw_variant_compare", "edge_elimination", "input_field_substitution",
+                   "model_intervention", "low_perturbation_replay", "repeat_run"],
+          "description": "反事实对照类型。edge_elimination 是本框架的核心：对候选链的每条边构造仅消除该边的实验。"
+        },
+        "edge_eliminated": { "type": "string", "description": "counterfactual_kind=edge_elimination 时，被消除的边 ID" }
+      },
+      "required": ["run_id", "firmware_hash", "target_identity"]
+    },
+
+    "Evidence": {
+      "type": "object",
+      "properties": {
+        "content_hash": { "type": "string", "description": "内容寻址存储的文件哈希" },
+        "artifact_path": { "type": "string", "description": "artifacts/<sha256> 下的路径" },
+        "evidence_kind": {
+          "type": "string",
+          "enum": ["upstream_report", "disassembly", "cfg", "ir_slice", "smt_model",
+                   "original_input", "minimized_input", "pc_registers", "call_trace",
+                   "rtl_log", "waveform", "retirement_trace", "reference_model_diff",
+                   "board_trace", "statistical_measurement", "protocol_session"]
+        }
+      },
+      "required": ["content_hash", "evidence_kind"]
+    },
+
+    "CorrectivePath": {
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "mechanism": {
+          "type": "string",
+          "enum": ["watchdog", "crc", "dual_read_compare", "retry", "error_handler", "redundancy", "other"]
+        },
+        "effectiveness_notes": { "type": "string" },
+        "known_limitations": { "type": "string", "description": "ARMORY 发现：某类故障的防护可能大幅增加对其他故障模型的脆弱性" }
+      },
+      "required": ["mechanism"]
+    }
+  }
+}

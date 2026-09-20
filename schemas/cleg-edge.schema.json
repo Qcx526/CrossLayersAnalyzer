@@ -1,0 +1,181 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://crosslayer.local/schemas/cleg-edge.schema.json",
+  "title": "CLEG Edge - 跨层证据图边",
+  "description": "跨层攻击链的『链』就是这些边的有序集合。与普通知识图谱的关键区别：(1) 每条边带可求解的条件约束；(2) 严格区分推理边与观测边；(3) 每条边可被反事实实验反驳。",
+  "type": "object",
+  "required": ["edge_id", "edge_type", "from_node", "to_node", "edge_nature", "evidence_level", "provenance"],
+  "properties": {
+
+    "edge_id": { "type": "string" },
+    "from_node": { "type": "string", "description": "起始节点 node_id" },
+    "to_node": { "type": "string", "description": "目标节点 node_id" },
+
+    "edge_type": {
+      "type": "string",
+      "enum": [
+        "controls", "reaches", "requires", "produces", "triggers",
+        "violates", "observed_in", "refuted_by", "equivalent_to",
+        "located_in", "accessible_via"
+      ]
+    },
+
+    "edge_nature": {
+      "type": "string",
+      "enum": ["inference", "observation"],
+      "description": "inference=来自静态分析/SMT求解/LLM抽取，可被反驳，证据级别<=E1；observation=来自实验观测，证据级别>=E2。报告中绝不允许把推理边渲染成和观测边相同的外观。"
+    },
+
+    "evidence_level": {
+      "type": "string",
+      "enum": ["E0", "E1", "E2", "E3", "E4"]
+    },
+
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "source_kind": {
+          "type": "string",
+          "enum": ["upstream_report", "manual_annotation", "llm_extraction", "static_analysis", "smt_solver", "dynamic_observation"]
+        },
+        "source_ref": { "type": "string" },
+        "source_quote": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "human_reviewed": { "type": "boolean", "default": false }
+      },
+      "required": ["source_kind"]
+    },
+
+    "condition": {
+      "type": "object",
+      "description": "★ 本框架的核心字段。普通知识图谱只有『存在/不存在』；这里给出信息沿该边传播所需满足的赋值条件，使边成为可求解约束。",
+      "properties": {
+        "smt": {
+          "type": "object",
+          "properties": {
+            "logic": { "type": "string", "default": "QF_BV" },
+            "expr_smtlib": { "type": "string" },
+            "var_declarations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "sort": { "type": "string" },
+                  "bind_to": { "type": "string" }
+                },
+                "required": ["name", "sort"]
+              }
+            }
+          },
+          "required": ["expr_smtlib"]
+        },
+        "natural_language": { "type": "string", "description": "人类可读表述，供报告与人工审核" },
+        "satisfiability": {
+          "type": "string",
+          "enum": ["sat", "unsat", "unknown", "not_checked"],
+          "description": "unsat 只排除当前建模范围和界限内的可能；超时或不支持必须返回 unknown，不能当成 sat 也不能当成 unsat"
+        },
+        "solver": { "type": "string", "description": "如 z3-4.13.0 / cvc5-1.2" },
+        "timeout_ms": { "type": "integer" },
+        "minimal_conflict_set": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "unsat 时的最小冲突集，说明是哪几条约束无法同时满足"
+        },
+        "unsatisfied_predicates": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "★ 搜索反馈信号：距离满足该边条件还缺哪些谓词。用于替代弱相关的代码覆盖率。"
+        },
+        "total_predicate_count": {
+          "type": "integer",
+          "description": "该边条件分解出的可独立检查谓词总数。配合 unsatisfied_predicates 计算约束进展度。"
+        }
+      }
+    },
+
+    "timing": {
+      "type": "object",
+      "description": "时序信息。跨层链常涉及时序窗口与并发，不能只看逻辑顺序。",
+      "properties": {
+        "ordering_constraint": { "type": "string", "description": "相对顺序要求" },
+        "window_cycles": { "type": "string", "description": "时间窗口（周期数或时间单位）" },
+        "concurrency_requirement": { "type": "string" },
+        "is_async": { "type": "boolean" }
+      }
+    },
+
+    "and_preconditions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "该边成立所需的全部 AND 前提。边不是孤立的：图节点应包含配置/状态，边应含 AND 前提、时间范围、证据和结果失效条件。"
+    },
+
+    "invalidation_conditions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "什么情况下该边结论失效（如芯片版本变更、配置变更、被固件纠正机制拦截）"
+    },
+
+    "observation": {
+      "type": "object",
+      "description": "edge_nature=observation 时必填",
+      "properties": {
+        "experiment_ref": { "type": "string", "description": "Experiment node_id" },
+        "repetitions": { "type": "integer", "description": "重复次数，用于区分稳定结果与偶然事件" },
+        "success_count": { "type": "integer" },
+        "perturbation_level": {
+          "type": "string",
+          "enum": ["none", "low", "medium", "high"],
+          "description": "断点/trace 引入的时序扰动等级。结果是否依赖调试器引入的时序需要标明。"
+        },
+        "first_divergence_observed": { "type": "string", "description": "首次观测到偏差的位置（信号/PC/周期）" }
+      }
+    },
+
+    "refutation": {
+      "type": "object",
+      "description": "被反驳的记录。边的证伪信息必须与证实信息同等保留。",
+      "properties": {
+        "refuting_experiment": { "type": "string" },
+        "mechanism": {
+          "type": "string",
+          "enum": ["hw_corrects_deviation", "fw_corrective_path", "code_unreachable",
+                   "operand_uncontrollable", "permission_insufficient", "reference_model_error",
+                   "isa_undefined_behavior", "mmio_model_mismatch", "load_layout_error",
+                   "input_unproducible_on_real_hw", "crash_without_hw_deviation"]
+        },
+        "notes": { "type": "string" }
+      }
+    },
+
+    "counterfactual_tested": {
+      "type": "boolean",
+      "default": false,
+      "description": "★ 该边是否已通过『仅消除此边』的实验验证过必要性。这是『攻击链』区别于『漏洞关联列表』的判据。"
+    },
+
+    "counterfactual_result": {
+      "type": "string",
+      "enum": ["chain_still_holds", "chain_broken", "inconclusive", "not_tested"],
+      "description": "counterfactual_tested=true 时必填。chain_still_holds 说明该边可能非必要，链的因果关系需要重新审视。"
+    },
+
+    "semantic_equivalence_basis": {
+      "type": "string",
+      "description": "edge_type=equivalent_to 时必填：跨层次语义等价的依据（如编译器优化的规范化规则、IR 等价证明）"
+    }
+  },
+
+  "allOf": [
+    {
+      "if": { "properties": { "edge_type": { "const": "equivalent_to" } } },
+      "then": { "required": ["semantic_equivalence_basis"] }
+    },
+    {
+      "if": { "properties": { "counterfactual_tested": { "const": true } } },
+      "then": { "required": ["counterfactual_result"] }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+======================================================================
+A. 运行环境与依赖版本
+======================================================================
+python           : 3.13.14 (AMD64)
+executable       : C:\Users\Administrator\.workbuddy\binaries\python\envs\default\Scripts\python.exe
+z3               : n/a
+capstone         : 5.0.7
+elftools         : 0.33
+networkx         : 3.6.1
+jsonschema       : 4.26.0
+yaml             : 6.0.3
+crosslayer       : 0.1.0
+引擎包路径       : F:\qcx\code\CrossLayersAnalyzer\src\crosslayer
+
+======================================================================
+B. 硬件触发契约内容（div_zero）
+======================================================================
+contract_id      : HW-DIV-0001
+name             : 除法器除零边界条件偏差
+bug_class        : cpu_core
+evidence_level   : E0
+platform         : riscv32 / rv32-test-core
+形式化完整性     : 4/4 (100%)
+required_op_classes (pre+trigger) : ['arith_div', 'store']
+trigger_op_classes  (判别性)      : ['arith_div']
+
+全部谓词：
+  [OK ] op_present           存在除法操作（DIVU）
+  [OK ] op_present           除法结果需要能被写回内存（攻击链的支撑条件，不是触发事件本身）
+  [OK ] op_present           触发需要一条除法指令
+  [OK ] input_controllable   被除数必须可由外部输入控制（否则攻击者无法影响触发）
+
+======================================================================
+C. 样本清单（地面真值）
+======================================================================
+样本总数: 13
+
+样本名                                二分类标签          可接受判定
+----------------------------------------------------------------------------------------------------
+S1_positive_controlled             exploitable    exploitable_candidate
+S2_negative_constant               unexploitable  present_but_uncontrollable
+S3_negative_unreachable            unexploitable  present_but_unreachable, not_present
+S4_negative_absent                 unexploitable  not_present
+S5_positive_multi                  exploitable    exploitable_candidate, present_but_uncontrollable
+S6_neg_folded_chain                unexploitable  present_but_uncontrollable
+S7_pos_partial_control             exploitable    exploitable_candidate
+S8_neg_load_derived                unexploitable  not_controllable, present_but_uncontrollable
+S9_pos_branch_guarded              exploitable    exploitable_candidate
+S10_neg_dead_after_ret             unexploitable  present_but_unreachable
+S11_neg_taint_killed               unexploitable  present_but_uncontrollable
+S12_pos_indirect_jump_table        excluded       exploitable_candidate, present_but_uncontrollable, path_dependent
+S13_pos_indirect_pointer           excluded       exploitable_candidate, present_but_uncontrollable, not_controllable, path_dependent, unknown
+
+exploitable=4  unexploitable=7  excluded=2

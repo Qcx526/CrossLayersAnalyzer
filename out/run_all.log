@@ -1,0 +1,188 @@
+==============================================================================
+跨层漏洞触发条件判定 —— 端到端验证
+==============================================================================
+
+触发契约: HW-DIV-0001 (除法器除零边界条件偏差)
+样本数  : 13
+
+契约形式化程度: 4/4 (100%)  未形式化=0
+
+------------------------------------------------------------------------------
+[S1_positive_controlled]  片段存在、可达、操作数（被除数）由外部输入控制
+  期望判定: ['exploitable_candidate']
+  实际判定: ['exploitable_candidate']
+  匹配结果: PASS   语义组 实=['EXPLOITABLE'] 期=['EXPLOITABLE']
+  候选数  : 1 / 结果数 1   块=1  指令=6  函数=1  耗时=1.619s
+    - 0x80000000 [exploitable_candidate] 可达=是(len=1) 可控=controlled sat=sat 进展=1.00  <== CANDIDATE
+        关键指令: divu arith_div
+        约束: InputConstraint(var_name='in_a0', width=32, constraint_smtlib='in_a0', model_value=0, description='外部输入 a0 的取值')
+        · 契约未提供可求解的操作数约束 —— 模型值仅代表符号变量的一个任意解，需人工确认真实触发条件
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S1_positive_controlled.md
+------------------------------------------------------------------------------
+[S2_negative_constant]  片段存在但操作数恒为常量
+  期望判定: ['present_but_uncontrollable']
+  实际判定: ['present_but_uncontrollable']
+  匹配结果: PASS   语义组 实=['UNEXPLOITABLE'] 期=['UNEXPLOITABLE']
+  候选数  : 0 / 结果数 1   块=1  指令=4  函数=1  耗时=0.642s
+    - 0x80000000 [present_but_uncontrollable] 可达=是(len=1) 可控=constant sat=not_checked 进展=0.50
+        关键指令: divu arith_div
+        · 操作数恒为常量：常量折叠后触发条件无法由外部输入满足
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S2_negative_constant.md
+------------------------------------------------------------------------------
+[S3_negative_unreachable]  片段存在但无法从入口到达（死代码）
+  期望判定: ['present_but_unreachable', 'not_present']
+  实际判定: ['present_but_unreachable']
+  匹配结果: PASS   语义组 实=['UNREACHABLE'] 期=['ABSENT', 'UNREACHABLE']
+  候选数  : 0 / 结果数 1   块=5  指令=5  函数=1  耗时=0.648s
+    - 0x8000000c [present_but_unreachable] 可达=否(len=0) 可控=not_present sat=not_checked 进展=0.00
+        关键指令: divu arith_div
+        · 触发片段存在于不可达基本块 bb_8000000c（地址 0x8000000c），无法从任何外部输入入口到达
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S3_negative_unreachable.md
+------------------------------------------------------------------------------
+[S4_negative_absent]  不含任何除法操作（阴性对照）
+  期望判定: ['not_present']
+  实际判定: ['not_present']
+  匹配结果: PASS   语义组 实=['ABSENT'] 期=['ABSENT']
+  候选数  : 0 / 结果数 1   块=1  指令=5  函数=1  耗时=0.547s
+    - 0x80000000 [not_present] 可达=否(len=0) 可控=not_present sat=not_checked 进展=0.00
+        · 全程序范围内未出现触发事件要求的操作类别 ['arith_div']，触发片段不存在
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S4_negative_absent.md
+------------------------------------------------------------------------------
+[S5_positive_multi]  两个除法点：一个可控、一个常量；含纠正路径分支
+  期望判定: ['exploitable_candidate', 'present_but_uncontrollable']
+  实际判定: ['exploitable_candidate', 'path_dependent']
+  匹配结果: PASS   语义组 实=['EXPLOITABLE', 'PARTIAL'] 期=['EXPLOITABLE', 'UNEXPLOITABLE']
+  候选数  : 1 / 结果数 2   块=3  指令=10  函数=1  耗时=0.993s
+    - 0x80000000 [exploitable_candidate] 可达=是(len=1) 可控=controlled sat=sat 进展=0.75  <== CANDIDATE
+        关键指令: divu arith_div
+        约束: InputConstraint(var_name='in_a0', width=32, constraint_smtlib='in_a0', model_value=0, description='外部输入 a0 的取值')
+        · 契约未提供可求解的操作数约束 —— 模型值仅代表符号变量的一个任意解，需人工确认真实触发条件
+    - 0x8000001c [path_dependent] 可达=是(len=2) 可控=path_dependent sat=not_checked 进展=0.50
+        关键指令: divu arith_div
+        · 操作数可控性取决于进入本块的路径：在部分路径上为常量、在另一部分路径上可变。需按具体路径分别评估，不能笼统判为可控或不可控。
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S5_positive_multi.md
+------------------------------------------------------------------------------
+[S6_neg_folded_chain]  常量经多级折叠链后作为操作数（传播深度测试）
+  期望判定: ['present_but_uncontrollable']
+  实际判定: ['present_but_uncontrollable']
+  匹配结果: PASS   语义组 实=['UNEXPLOITABLE'] 期=['UNEXPLOITABLE']
+  候选数  : 0 / 结果数 1   块=1  指令=6  函数=1  耗时=0.684s
+    - 0x80000000 [present_but_uncontrollable] 可达=是(len=1) 可控=constant sat=not_checked 进展=0.50
+        关键指令: divu arith_div
+        · 操作数恒为常量：常量折叠后触发条件无法由外部输入满足
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S6_neg_folded_chain.md
+------------------------------------------------------------------------------
+[S7_pos_partial_control]  仅被除数可控、除数恒为 0（部分可控即可触发）
+  期望判定: ['exploitable_candidate']
+  实际判定: ['exploitable_candidate']
+  匹配结果: PASS   语义组 实=['EXPLOITABLE'] 期=['EXPLOITABLE']
+  候选数  : 1 / 结果数 1   块=1  指令=5  函数=1  耗时=0.672s
+    - 0x80000000 [exploitable_candidate] 可达=是(len=1) 可控=controlled sat=sat 进展=0.75  <== CANDIDATE
+        关键指令: divu arith_div
+        约束: InputConstraint(var_name='in_a0', width=32, constraint_smtlib='in_a0', model_value=0, description='外部输入 a0 的取值')
+        · 契约未提供可求解的操作数约束 —— 模型值仅代表符号变量的一个任意解，需人工确认真实触发条件
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S7_pos_partial_control.md
+------------------------------------------------------------------------------
+[S8_neg_load_derived]  操作数来自常量地址 load（非攻击者可控）
+  期望判定: ['not_controllable', 'present_but_uncontrollable']
+  实际判定: ['not_controllable']
+  匹配结果: PASS   语义组 实=['UNEXPLOITABLE'] 期=['UNEXPLOITABLE']
+  候选数  : 0 / 结果数 1   块=1  指令=5  函数=1  耗时=0.659s
+    - 0x80000000 [not_controllable] 可达=是(len=1) 可控=not_controllable sat=not_checked 进展=0.50
+        关键指令: divu arith_div
+        · 操作数不可由外部输入影响（无输入污点可达），但其具体值静态不可知（如从常量地址 load）。结论：攻击者无法影响该触发条件；注意这与「操作数是常量」不同 —— 只是「攻击者控制不了」。
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S8_neg_load_derived.md
+------------------------------------------------------------------------------
+[S9_pos_branch_guarded]  触发点受分支条件保护，仍可从输入入口到达
+  期望判定: ['exploitable_candidate']
+  实际判定: ['exploitable_candidate']
+  匹配结果: PASS   语义组 实=['EXPLOITABLE'] 期=['EXPLOITABLE']
+  候选数  : 1 / 结果数 1   块=3  指令=6  函数=1  耗时=0.603s
+    - 0x80000010 [exploitable_candidate] 可达=是(len=2) 可控=controlled sat=sat 进展=0.75  <== CANDIDATE
+        关键指令: divu arith_div
+        约束: InputConstraint(var_name='in_a0', width=32, constraint_smtlib='in_a0', model_value=0, description='外部输入 a0 的取值')
+        · 契约未提供可求解的操作数约束 —— 模型值仅代表符号变量的一个任意解，需人工确认真实触发条件
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S9_pos_branch_guarded.md
+------------------------------------------------------------------------------
+[S10_neg_dead_after_ret]  ret 之后的死代码，两处触发点均不可达
+  期望判定: ['present_but_unreachable']
+  实际判定: ['present_but_unreachable']
+  匹配结果: PASS   语义组 实=['UNREACHABLE'] 期=['UNREACHABLE']
+  候选数  : 0 / 结果数 1   块=2  指令=3  函数=1  耗时=0.754s
+    - 0x80000004 [present_but_unreachable] 可达=否(len=0) 可控=not_present sat=not_checked 进展=0.00
+        关键指令: divu arith_div
+        · 触发片段存在于不可达基本块 bb_80000004（地址 0x80000004），无法从任何外部输入入口到达
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S10_neg_dead_after_ret.md
+------------------------------------------------------------------------------
+[S11_neg_taint_killed]  污点被后续常量赋值清除（taint kill 测试）
+  期望判定: ['present_but_uncontrollable']
+  实际判定: ['present_but_uncontrollable']
+  匹配结果: PASS   语义组 实=['UNEXPLOITABLE'] 期=['UNEXPLOITABLE']
+  候选数  : 0 / 结果数 1   块=1  指令=5  函数=1  耗时=0.593s
+    - 0x80000000 [present_but_uncontrollable] 可达=是(len=1) 可控=constant sat=not_checked 进展=0.50
+        关键指令: divu arith_div
+        · 操作数恒为常量：常量折叠后触发条件无法由外部输入满足
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S11_neg_taint_killed.md
+------------------------------------------------------------------------------
+[S12_pos_indirect_jump_table]  触发点位于间接跳转（跳转表）目标上 —— 间接跳转解析测试
+  期望判定: ['exploitable_candidate', 'present_but_uncontrollable', 'path_dependent']
+  实际判定: ['present_but_uncontrollable']
+  匹配结果: PASS   语义组 实=['UNEXPLOITABLE'] 期=['EXPLOITABLE', 'PARTIAL', 'UNEXPLOITABLE']
+  候选数  : 0 / 结果数 1   块=5  指令=8  函数=1  耗时=0.637s
+    - 0x80000018 [present_but_uncontrollable] 可达=是(len=2) 可控=constant sat=not_checked 进展=0.50
+        关键指令: divu arith_div
+        · 操作数恒为常量：常量折叠后触发条件无法由外部输入满足
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S12_pos_indirect_jump_table.md
+------------------------------------------------------------------------------
+[S13_pos_indirect_pointer]  完全动态的函数指针间接跳转 —— 兜底策略测试（不得误报不可达）
+  期望判定: ['exploitable_candidate', 'present_but_uncontrollable', 'not_controllable', 'path_dependent', 'unknown']
+  实际判定: ['unknown']
+  匹配结果: PASS   语义组 实=['UNKNOWN'] 期=['EXPLOITABLE', 'PARTIAL', 'UNEXPLOITABLE', 'UNKNOWN']
+  候选数  : 0 / 结果数 1   块=3  指令=5  函数=1  耗时=0.635s
+    - 0x8000000c [unknown] 可达=是(len=2) 可控=unknown sat=not_checked 进展=0.50
+        关键指令: divu arith_div
+        · 操作数可控性无法判定，需符号执行确认
+  报告    : F:\qcx\code\CrossLayersAnalyzer\out\reports\S13_pos_indirect_pointer.md
+
+==============================================================================
+汇总结论
+==============================================================================
+可执行样本 : 13   异常样本 : 0
+判定正确   : 13/13
+准确率     : 100.0%
+
+二分类视角（可利用 vs 不可利用）
+  真阳性 TP=4  假阳性 FP=0
+  真阴性 TN=7  假阴性 FN=0
+  正样本 4 / 负样本 7   未计入 2（考查其它性质，见 binary_label）
+  精确率 Precision = 100.0%
+  召回率 Recall    = 100.0%
+
+逐样本
+  [OK  ] S1_positive_controlled         [POS] 实=EXPLOITABLE 期=EXPLOITABLE
+  [OK  ] S2_negative_constant           [NEG] 实=UNEXPLOITABLE 期=UNEXPLOITABLE
+  [OK  ] S3_negative_unreachable        [NEG] 实=UNREACHABLE 期=ABSENT,UNREACHABLE
+  [OK  ] S4_negative_absent             [NEG] 实=ABSENT 期=ABSENT
+  [OK  ] S5_positive_multi              [POS] 实=EXPLOITABLE,PARTIAL 期=EXPLOITABLE,UNEXPLOITABLE
+  [OK  ] S6_neg_folded_chain            [NEG] 实=UNEXPLOITABLE 期=UNEXPLOITABLE
+  [OK  ] S7_pos_partial_control         [POS] 实=EXPLOITABLE 期=EXPLOITABLE
+  [OK  ] S8_neg_load_derived            [NEG] 实=UNEXPLOITABLE 期=UNEXPLOITABLE
+  [OK  ] S9_pos_branch_guarded          [POS] 实=EXPLOITABLE 期=EXPLOITABLE
+  [OK  ] S10_neg_dead_after_ret         [NEG] 实=UNREACHABLE 期=UNREACHABLE
+  [OK  ] S11_neg_taint_killed           [NEG] 实=UNEXPLOITABLE 期=UNEXPLOITABLE
+  [OK  ] S12_pos_indirect_jump_table    [EXC] 实=UNEXPLOITABLE 期=EXPLOITABLE,PARTIAL,UNEXPLOITABLE
+  [OK  ] S13_pos_indirect_pointer       [EXC] 实=UNKNOWN 期=EXPLOITABLE,PARTIAL,UNEXPLOITABLE,UNKNOWN
+
+==============================================================================
+证据图（CLEG）自检
+==============================================================================
+  节点 36   边 30（推理 30 / 观测 0）
+  节点类型: {'Capability': 1, 'CodeLocation': 14, 'Deviation': 1, 'Evidence': 6, 'FirmwareImage': 13, 'TriggerContract': 1}
+  已做反事实验证的边: 0
+  satisfiability=unknown 的边: 0
+  requires 边: 1
+  triggers 边: 14
+  ✅ 全部不变量检查通过
+
+写出: F:\qcx\code\CrossLayersAnalyzer\out\summary.json
+日志: F:\qcx\code\CrossLayersAnalyzer\out\run_all.log

@@ -1,0 +1,16 @@
+# 跨层漏洞攻击链路分析器 —— 运行依赖
+# 安装：pip install -r requirements.txt
+#
+# 说明：本工程刻意只依赖「纯 Python + 少量单文件 C 扩展」的库，
+#      全部可用 pip 直接安装，无需 WSL / 编译器 / 商业 EDA 工具，
+#      以保证论文实验的可复现性（评审机上一键跑通）。
+
+z3-solver>=4.13          # SMT 求解：约束可满足性与模型求解（创新点 A 的核心）
+capstone>=5.0            # 反汇编：RISC-V / ARM 指令解码
+pyelftools>=0.31         # ELF 解析：段表、符号表、入口点
+networkx>=3.2            # 控制流图：可达性、支配关系、路径枚举
+jsonschema>=4.20         # 契约 / CLEG 图谱的 schema 校验
+PyYAML>=6.0              # 配置文件解析
+
+# 可选（开发期辅助，非运行必需）
+# pytest>=8.0            # 单元测试框架（当前测试为自研 runner，无外部依赖）
